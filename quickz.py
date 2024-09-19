@@ -59,6 +59,7 @@ class Value:
                 self.value = value
                 self.base = base
                 self.prefix_base = unit_data
+                self.precision = Settings.precision
             except Exception as e:
                 raise ValueError(f"Cannot convert value: {e}")
         else:
@@ -69,6 +70,7 @@ class Value:
                 self.base = None
                 self.prefix_base = None
                 self.std = self
+                self.precision = Settings.precision
             except ValueError:
                 raise SyntaxError("Value string does not match expected format of 'n.n PrefixUnit'")
 
@@ -77,7 +79,7 @@ class Value:
             self.to_eng()
 
         if Settings.auto_precision and not no_conversion:
-            self.set_precision(Settings.precision)
+            self.set_precision(self.precision)
 
     def to_eng(self) -> None:
         if self.prefix is None:
@@ -93,8 +95,14 @@ class Value:
 
             if self.value < 1:
                 unit_index += 1
+
+                if unit_index == len(self.units):
+                    raise ValueError("Value out of range! Cannot shift units past upper bound")
             else:
                 unit_index -= 1
+
+                if unit_index < 0:
+                    raise ValueError("Value out of range! Cannot shift units past lower bound")
 
             # Try new offset
             shift = self.units[list(self.units.keys())[unit_index]] / self.units[list(self.units.keys())[old_index]]
@@ -103,7 +111,8 @@ class Value:
             self.value /= shift
 
     def set_precision(self, precision: int) -> None:
-        self.value = round(self.value, precision)
+        # self.value = round(self.value, precision)
+        self.precision = precision
 
     def add_base(self, base: str) -> None:
         self.base = base
@@ -115,9 +124,9 @@ class Value:
 
     def __str__(self) -> str:
         if Settings.auto_print_precision:
-            return f"{round(self.value, Settings.precision)} {self.prefix_base if self.prefix is not None else ""}"
+            return f"{round(self.value, self.precision)} {self.prefix_base if self.prefix_base is not None else ""}"
         else:
-            return f"{self.value} {self.prefix_base if self.prefix is not None else ""}"
+            return f"{self.value} {self.prefix_base if self.prefix_base is not None else ""}"
     
     def __float__(self) -> float:
         return self.std.value
