@@ -90,13 +90,13 @@ class Value:
             unit_index = list(self.units.keys()).index(self.prefix)
 
         # While the value is not within engineering notation range
-        while self.value < 1 or self.value >= 1000:
+        while abs(self.value) < 1 or abs(self.value) >= 1000:
             old_index = unit_index
 
             if self.value < 1:
                 unit_index += 1
 
-                if unit_index == len(self.units):
+                if unit_index is len(self.units):
                     raise ValueError("Value out of range! Cannot shift units past upper bound")
             else:
                 unit_index -= 1
@@ -110,8 +110,46 @@ class Value:
             self.prefix_base = f"{self.prefix}{self.base}"
             self.value /= shift
 
+        # Reset the std property so that references to .std and calls for to_std() work as expected
+        if self.base is not None and self.prefix is not None:
+            # Has base and prefix, convert the prefix and value to std and leave base
+            self.std = Value(f"{self.value * self.units[self.prefix]} {self.base}", True)
+        elif self.base is None and self.prefix is not None:
+            # Does not have base but has prefix, convert the prefix and value to std and do not include base
+            self.std = Value(f"{self.value * self.units[self.prefix]}", True)
+        else:
+            # Does not have base and does not have prefix, leave as-is
+            self.std = self
+
+    def to_std(self) -> None:
+        self.value = self.std.value
+        self.base = self.std.base
+        self.prefix = self.std.prefix
+        self.prefix_base = self.std.prefix_base
+
+    def convert_to(self, prefix: str) -> None:
+        flag = False
+
+        # Find the right unit and associate the prefix
+        for unit_attempt in self.units:
+            if unit_attempt in prefix and prefix.index(unit_attempt) == 0:
+                flag = True
+                prefix = unit_attempt
+                break
+
+        if not flag:
+            raise ValueError("Invalid prefix")
+
+        self.to_std()
+        self.value /= self.units[prefix]
+        self.prefix = prefix
+
+        if self.base is not None:
+            self.prefix_base = f"{self.prefix}{self.base}"
+        else:
+            self.prefix_base = self.prefix
+
     def set_precision(self, precision: int) -> None:
-        # self.value = round(self.value, precision)
         self.precision = precision
 
     def add_base(self, base: str) -> None:
@@ -142,3 +180,21 @@ class Value:
     
     def __truediv__(self, val2):
         return Value(str(self.std.value / val2.std.value))
+
+    def __gt__(self, val2):
+        return Value(str(self.std.value > val2.std.value))
+
+    def __ge__(self, val2):
+        return Value(str(self.std.value >= val2.std.value))
+
+    def __lt__(self, val2):
+        return Value(str(self.std.value < val2.std.value))
+
+    def __le__(self, val2):
+        return Value(str(self.std.value <= val2.std.value))
+
+    def __eq__(self, val2):
+        return Value(str(self.std.value == val2.std.value))
+
+    def __ne__(self, val2):
+        return Value(str(self.std.value != val2.std.value))
