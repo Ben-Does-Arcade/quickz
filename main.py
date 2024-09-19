@@ -1,7 +1,7 @@
 import quickz
 from quickz import Value, Settings
 
-Settings.auto_eng = False
+Settings.auto_eng = True
 Settings.auto_print_precision = True
 
 # voltage = Value("500 mV")
@@ -13,7 +13,21 @@ Settings.auto_print_precision = True
 # print(resistance)
 
 v = Value("5.07 mV")
+a = Value("50 A")
+
 print(v)
-v_std = v.std
-v_std.set_precision(6)
-print(v_std)
+print(a)
+
+v.to_std()
+v.set_precision(5)
+print(v)
+
+v.convert_to("kA")
+print(v)
+
+v.convert_to("uA")
+v.set_precision(10)
+print(v)
+
+v.to_eng()
+print(v)
