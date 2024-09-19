@@ -1,5 +1,8 @@
 class Settings:
     auto_eng = True
+    auto_precision = False
+    auto_print_precision = False
+    precision = 2  # Set -1 to turn off
 
 class Value:
     # Known units with their equivalent deviation from the base
@@ -72,7 +75,10 @@ class Value:
         # Convert to engineering notation if automatic conversion is enabled
         if Settings.auto_eng and not no_conversion:
             self.to_eng()
-            
+
+        if Settings.auto_precision and not no_conversion:
+            self.set_precision(Settings.precision)
+
     def to_eng(self) -> None:
         if self.prefix is None:
             # There is no prefix, so assign the BASE prefix offset of 10^0 = 1
@@ -95,7 +101,10 @@ class Value:
             self.prefix = list(self.units.keys())[unit_index]
             self.prefix_base = f"{self.prefix}{self.base}"
             self.value /= shift
-        
+
+    def set_precision(self, precision: int) -> None:
+        self.value = round(self.value, precision)
+
     def add_base(self, base: str) -> None:
         self.base = base
 
@@ -105,10 +114,10 @@ class Value:
             self.prefix_base = f"{self.prefix}{self.base}"
 
     def __str__(self) -> str:
-        if self.prefix_base is not None:
-            return f"{self.value} {self.prefix_base}"
+        if Settings.auto_print_precision:
+            return f"{round(self.value, Settings.precision)} {self.prefix_base if self.prefix is not None else ""}"
         else:
-            return str(self.value)
+            return f"{self.value} {self.prefix_base if self.prefix is not None else ""}"
     
     def __float__(self) -> float:
         return self.std.value
