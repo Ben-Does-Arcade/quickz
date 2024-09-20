@@ -28,4 +28,4 @@ Settings.auto_print_precision = True
 p = Phasor("34 < 50")
 q = Phasor("2 < 15")
 
-print(p * q)
+print(p / q)
