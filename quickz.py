@@ -170,9 +170,9 @@ class Value:
 
     def __str__(self) -> str:
         if Settings.auto_print_precision:
-            return f"{round(self.value, self.precision)} {self.prefix_base if self.prefix_base is not None else ""}"
+            return f"{round(self.value, self.precision)} {self.prefix_base if self.prefix_base is not None else ''}"
         else:
-            return f"{self.value} {self.prefix_base if self.prefix_base is not None else ""}"
+            return f"{self.value} {self.prefix_base if self.prefix_base is not None else ''}"
     
     def __float__(self) -> float:
         return self.std.value
