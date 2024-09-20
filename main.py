@@ -13,21 +13,14 @@ Settings.auto_print_precision = True
 # print(resistance)
 
 v = Value("5.07 mV")
-a = Value("50 A")
+a = Value("50 nA")
 
 print(v)
 print(a)
 
-v.to_std()
-v.set_precision(5)
-print(v)
+r = v / a
+r.set_base("Ω")
+print(r)
 
-v.convert_to("kA")
-print(v)
-
-v.convert_to("uA")
-v.set_precision(10)
-print(v)
-
-v.to_eng()
-print(v)
+r.to_std()
+print(r)
