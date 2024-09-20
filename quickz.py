@@ -60,8 +60,8 @@ class Value:
                 self.base = base
                 self.prefix_base = unit_data
                 self.precision = Settings.precision
-            except Exception as e:
-                raise ValueError(f"Cannot convert value: {e}")
+            except Exception:
+                raise ValueError("Cannot convert value")
         else:
             try:
                 # Attempt to set the value as just a float by itself, useful for mathematical operations
@@ -209,5 +209,34 @@ class Value:
 
 class Phasor:
     def __init__(self, value: str) -> None:
-        # if "<" in
-        pass
+        if " < " in value:
+            try:
+                magnitude = float(value.split(" < ")[0])
+                angle = float(value.split(" < ")[1])
+
+                if Settings.auto_precision:
+                    magnitude = round(magnitude, Settings.precision)
+                    angle = round(angle, Settings.precision)
+
+                self.magnitude = magnitude
+                self.angle = angle
+                self.precision = Settings.precision
+            except Exception:
+                raise ValueError("Cannot convert value")
+        else:
+            raise SyntaxError("Value string does not match the expected format of 'nn < 00")
+
+    def set_precision(self, precision: int) -> None:
+        self.precision = precision
+
+    def __str__(self) -> str:
+        if Settings.auto_print_precision:
+            return f"{round(self.magnitude, Settings.precision)} ∠ {round(self.angle, Settings.precision)}°"
+        else:
+            return f"{self.magnitude} ∠ {self.angle}°"
+
+    def __mul__(self, val2):
+        return Phasor(f"{self.magnitude * val2.magnitude} < {self.angle + val2.angle}")
+
+    def __truediv__(self, val2):
+        return Phasor(f"{self.magnitude / val2.magnitude} < {self.angle - val2.angle}")
