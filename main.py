@@ -1,5 +1,5 @@
 import quickz
-from quickz import Value, Settings
+from quickz import *
 
 Settings.auto_eng = True
 Settings.auto_print_precision = True
@@ -12,15 +12,20 @@ Settings.auto_print_precision = True
 # print(resistance.base)
 # print(resistance)
 
-v = Value("5.07 mV")
-a = Value("50 nA")
+# v = Value("5.07 mV")
+# a = Value("50 nA")
+#
+# print(v)
+# print(a)
+#
+# r = v / a
+# r.set_base("Ω")
+# print(r)
+#
+# r.to_std()
+# print(r)
 
-print(v)
-print(a)
+p = Phasor("34 < 50")
+q = Phasor("2 < 15")
 
-r = v / a
-r.set_base("Ω")
-print(r)
-
-r.to_std()
-print(r)
+print(p * q)
