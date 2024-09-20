@@ -1,8 +1,8 @@
 class Settings:
     auto_eng = True
     auto_precision = False
-    auto_print_precision = False
-    precision = 2  # Set -1 to turn off
+    auto_print_precision = True
+    precision = 3  # Set -1 to turn off
 
 class Value:
     # Known units with their equivalent deviation from the base
@@ -107,8 +107,13 @@ class Value:
             # Try new offset
             shift = self.units[list(self.units.keys())[unit_index]] / self.units[list(self.units.keys())[old_index]]
             self.prefix = list(self.units.keys())[unit_index]
-            self.prefix_base = f"{self.prefix}{self.base}"
             self.value /= shift
+
+            # Only include the base in prefix_base if it is defined
+            if self.base is not None:
+                self.prefix_base = f"{self.prefix}{self.base}"
+            else:
+                self.prefix_base = self.prefix
 
         # Reset the std property so that references to .std and calls for to_std() work as expected
         if self.base is not None and self.prefix is not None:
@@ -152,13 +157,16 @@ class Value:
     def set_precision(self, precision: int) -> None:
         self.precision = precision
 
-    def add_base(self, base: str) -> None:
+    def set_base(self, base: str) -> None:
         self.base = base
+        self.std.base = base
 
         if self.prefix is None:
             self.prefix_base = base
+            self.std.prefix_base = base
         else:
             self.prefix_base = f"{self.prefix}{self.base}"
+            self.std.prefix_base = f"{self.base}"
 
     def __str__(self) -> str:
         if Settings.auto_print_precision:
@@ -198,3 +206,8 @@ class Value:
 
     def __ne__(self, val2):
         return Value(str(self.std.value != val2.std.value))
+
+class Phasor:
+    def __init__(self, value: str) -> None:
+        # if "<" in
+        pass
