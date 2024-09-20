@@ -1,3 +1,8 @@
+from math import sin, cos, atan, sqrt, pow, radians, degrees, pi
+
+import quickz
+
+
 class Settings:
     auto_eng = True
     auto_precision = False
@@ -32,8 +37,6 @@ class Value:
                 value = float(value_str.split(" ")[0])
                 unit_data = value_str.split(" ")[1]
                 prefix = None
-                base = None
-
                 flag = False
 
                 # Find the right unit and associate the prefix
@@ -178,16 +181,36 @@ class Value:
         return self.std.value
     
     def __add__(self, val2):
-        return Value(str(self.std.value + val2.std.value))
+        if type(val2) == Value:
+            return Value(str(self.std.value + val2.std.value))
+        elif type(val2) == Phasor:
+            return Phasor(f"{self.std.value} < 0") + val2
+        else:
+            raise ValueError(f"Cannot add Value to type '{type(val2)}'")
     
     def __sub__(self, val2):
-        return Value(str(self.std.value - val2.std.value))
+        if type(val2) == Value:
+            return Value(str(self.std.value - val2.std.value))
+        elif type(val2) == Phasor:
+            return Phasor(f"{self.std.value} < 0") - val2
+        else:
+            raise ValueError(f"Cannot subtract Value from type '{type(val2)}'")
     
     def __mul__(self, val2):
-        return Value(str(self.std.value * val2.std.value))
-    
+        if type(val2) == Value:
+            return Value(str(self.std.value * val2.std.value))
+        elif type(val2) == Phasor:
+            return Phasor(f"{self.std.value} < 0") * val2
+        else:
+            raise ValueError(f"Cannot multiply Value by type '{type(val2)}'")
+
     def __truediv__(self, val2):
-        return Value(str(self.std.value / val2.std.value))
+        if type(val2) == Value:
+            return Value(str(self.std.value / val2.std.value))
+        elif type(val2) == Phasor:
+            return Phasor(f"{self.std.value} < 0") / val2
+        else:
+            raise ValueError(f"Cannot divide Value by type '{type(val2)}'")
 
     def __gt__(self, val2):
         return Value(str(self.std.value > val2.std.value))
@@ -235,8 +258,99 @@ class Phasor:
         else:
             return f"{self.magnitude} ∠ {self.angle}°"
 
+    def __add__(self, val2):
+        if type(val2) == Phasor:
+            val2_magnitude = val2.magnitude
+            val2_angle = val2.angle
+        elif type(val2) == Value:
+            val2_magnitude = val2.std.value
+            val2_angle = 0
+        else:
+            raise ValueError(f"Cannot add Phasor to type '{type(val2)}'")
+
+        a1_cos = cos(radians(self.angle))
+        a1_sin = sin(radians(self.angle))
+        a2_cos = cos(radians(val2_angle))
+        a2_sin = sin(radians(val2_angle))
+
+        a = a1_cos * self.magnitude
+        b = a1_sin * self.magnitude
+        c = a2_cos * val2_magnitude
+        d = a2_sin * val2_magnitude
+
+        real_sum = a + c
+        imag_sum = b + d
+
+        calc_magnitude = sqrt(pow(real_sum, 2) + pow(imag_sum, 2))
+
+        if real_sum > 0:
+            calc_angle = degrees(atan(imag_sum / real_sum))
+        elif imag_sum > 0:
+            calc_angle = 180 + degrees(atan(imag_sum / real_sum))
+        else:
+            calc_angle = 180 - degrees(atan(imag_sum / real_sum))
+
+        return Phasor(f"{calc_magnitude} < {calc_angle}")
+
+    def __sub__(self, val2):
+        if type(val2) == Phasor:
+            val2_magnitude = val2.magnitude
+            val2_angle = val2.angle
+        elif type(val2) == Value:
+            val2_magnitude = val2.std.value
+            val2_angle = 0
+        else:
+            raise ValueError(f"Cannot subtract Phasor from type '{type(val2)}'")
+
+        a1_cos = cos(radians(self.angle))
+        a1_sin = sin(radians(self.angle))
+        a2_cos = cos(radians(val2_angle))
+        a2_sin = sin(radians(val2_angle))
+
+        a = a1_cos * self.magnitude
+        b = a1_sin * self.magnitude
+        c = a2_cos * val2_magnitude
+        d = a2_sin * val2_magnitude
+
+        real_dif = a - c
+        imag_dif = b - d
+
+        calc_magnitude = sqrt(pow(real_dif, 2) + pow(imag_dif, 2))
+
+        if real_dif > 0:
+            if imag_dif > 0:
+                print("A")
+                calc_angle = degrees(atan(imag_dif / real_dif))
+            else:
+                print("B")
+                calc_angle = -degrees(atan(imag_dif / real_dif))
+        else:
+            if imag_dif > 0:
+                print("C")
+                calc_angle = 180 + degrees(atan(imag_dif / real_dif))
+            else:
+                print("D")
+                calc_angle = -1 * (180 - degrees(atan(imag_dif / real_dif)))
+
+        return Phasor(f"{calc_magnitude} < {calc_angle}")
+
     def __mul__(self, val2):
-        return Phasor(f"{self.magnitude * val2.magnitude} < {self.angle + val2.angle}")
+        if type(val2) == Phasor:
+            return Phasor(f"{self.magnitude * val2.magnitude} < {self.angle + val2.angle}")
+        elif type(val2) == Value:
+            return Phasor(f"{self.magnitude * val2.std.value} < {self.angle}")
+        else:
+            raise ValueError(f"Cannot multiply Phasor by type '{type(val2)}'")
 
     def __truediv__(self, val2):
-        return Phasor(f"{self.magnitude / val2.magnitude} < {self.angle - val2.angle}")
+        if type(val2) == Phasor:
+            return Phasor(f"{self.magnitude / val2.magnitude} < {self.angle - val2.angle}")
+        elif type(val2) == Value:
+            return Phasor(f"{self.magnitude / val2.std.value} < {self.angle}")
+        else:
+            raise ValueError(f"Cannot divide Phasor by type '{type(val2)}'")
+
+def ohms_law(v: Value | None, i: Value | None, r: Value | None):
+    if i is not None and r is not None:
+        # V = IR
+        voltage = i * r
