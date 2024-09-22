@@ -1,5 +1,8 @@
 from math import sin, cos, atan, sqrt, pow, radians, degrees, pi
 
+import quickz
+
+
 class Settings:
     auto_eng = True
     auto_precision = False
@@ -90,7 +93,7 @@ class Value:
             unit_index = list(self.units.keys()).index(self.prefix)
 
         # While the value is not within engineering notation range
-        while (abs(self.value) < 1 or abs(self.value) >= 1000) and self.value != 0:
+        while abs(self.value) < 1 or abs(self.value) >= 1000:
             old_index = unit_index
 
             if self.value < 1:
@@ -157,19 +160,16 @@ class Value:
     def set_precision(self, precision: int) -> None:
         self.precision = precision
 
-    def set_base(self, base: str | None) -> None:
+    def set_base(self, base: str) -> None:
         self.base = base
         self.std.base = base
 
         if self.prefix is None:
             self.prefix_base = base
             self.std.prefix_base = base
-        elif base is not None:
-            self.prefix_base = f"{self.prefix}{self.base}"
-            self.std.prefix_base = self.base
         else:
-            self.prefix_base = self.prefix
-            self.std.prefix_base = self.prefix
+            self.prefix_base = f"{self.prefix}{self.base}"
+            self.std.prefix_base = f"{self.base}"
 
     def __str__(self) -> str:
         if Settings.auto_print_precision:
@@ -244,7 +244,6 @@ class Phasor:
                 self.magnitude = magnitude
                 self.angle = angle
                 self.precision = Settings.precision
-                self.base = ""
             except Exception:
                 raise ValueError("Cannot convert value")
         else:
@@ -253,12 +252,9 @@ class Phasor:
     def set_precision(self, precision: int) -> None:
         self.precision = precision
 
-    def set_base(self, base: str | None) -> None:
-        pass  # TODO: finish this function
-
     def __str__(self) -> str:
         if Settings.auto_print_precision:
-            return f"{round(self.magnitude, self.precision)} ∠ {round(self.angle, self.precision)}°"
+            return f"{round(self.magnitude, Settings.precision)} ∠ {round(self.angle, Settings.precision)}°"
         else:
             return f"{self.magnitude} ∠ {self.angle}°"
 
@@ -270,7 +266,7 @@ class Phasor:
             val2_magnitude = val2.std.value
             val2_angle = 0
         else:
-            raise ValueError(f"Cannot subtract Phasor from type '{type(val2)}'")
+            raise ValueError(f"Cannot add Phasor to type '{type(val2)}'")
 
         a1_cos = cos(radians(self.angle))
         a1_sin = sin(radians(self.angle))
@@ -282,18 +278,17 @@ class Phasor:
         c = a2_cos * val2_magnitude
         d = a2_sin * val2_magnitude
 
-        real_dif = a + c
-        imag_dif = b + d
+        real_sum = a + c
+        imag_sum = b + d
 
-        calc_magnitude = sqrt(pow(real_dif, 2) + pow(imag_dif, 2))
+        calc_magnitude = sqrt(pow(real_sum, 2) + pow(imag_sum, 2))
 
-        if real_dif > 0:
-            calc_angle = degrees(atan(imag_dif / real_dif))
+        if real_sum > 0:
+            calc_angle = degrees(atan(imag_sum / real_sum))
+        elif imag_sum > 0:
+            calc_angle = 180 + degrees(atan(imag_sum / real_sum))
         else:
-            if imag_dif > 0:
-                calc_angle = 180 + degrees(atan(imag_dif / real_dif))
-            else:
-                calc_angle = -1 * (180 - degrees(atan(imag_dif / real_dif)))
+            calc_angle = 180 - degrees(atan(imag_sum / real_sum))
 
         return Phasor(f"{calc_magnitude} < {calc_angle}")
 
@@ -323,11 +318,18 @@ class Phasor:
         calc_magnitude = sqrt(pow(real_dif, 2) + pow(imag_dif, 2))
 
         if real_dif > 0:
-            calc_angle = degrees(atan(imag_dif / real_dif))
+            if imag_dif > 0:
+                print("A")
+                calc_angle = degrees(atan(imag_dif / real_dif))
+            else:
+                print("B")
+                calc_angle = -degrees(atan(imag_dif / real_dif))
         else:
             if imag_dif > 0:
+                print("C")
                 calc_angle = 180 + degrees(atan(imag_dif / real_dif))
             else:
+                print("D")
                 calc_angle = -1 * (180 - degrees(atan(imag_dif / real_dif)))
 
         return Phasor(f"{calc_magnitude} < {calc_angle}")
@@ -348,91 +350,7 @@ class Phasor:
         else:
             raise ValueError(f"Cannot divide Phasor by type '{type(val2)}'")
 
-def ohms_law(v: Value | Phasor = None, i: Value | Phasor = None, r: Value | Phasor = None, z: Value | Phasor = None) -> Value:
-    calc = None
-
-    if i is not None and (r is not None or z is not None):
-        if r is not None:
-            # V = IR
-            calc = i * r
-        elif z is not None:
-            # V = IZ
-            calc = i * z
-
-        calc.set_base("V")
-    elif v is not None and i is not None:
-        # R = V/I or Z = V/I
-        calc = v / i
-        calc.set_base("Ω")
-    elif v is not None and (r is not None or z is not None):
-        if r is not None:
-            # I = V/R
-            calc = v / r
-        elif z is not None:
-            # I = V/Z
-            calc = v / z
-
-        calc.set_base("A")
-    else:
-        raise AttributeError("At least two of (v, i, r) parameters must be filled")
-
-    return calc
-
-def parallel(*args: Value | Phasor) -> Value | Phasor:
-    if len(args) == 0:
-        raise ValueError("At least one argument is required")
-
-    first_base = args[0].base
-    all_same = True
-    division_sum = Value("0")
-
-    for value in args:
-        division_sum += Value("1") / value
-
-        if value.base != first_base:
-            all_same = False
-
-    if all_same:
-        calc = Value(f"1 {first_base}") / division_sum
-        calc.set_base(first_base)
-    else:
-        # Warning here?
-        pass
-
-    calc = Value("1") / division_sum
-    calc.set_base(None)
-
-    return calc
-
-def Zc(f: Value = None, c: Value = None, r: Value = None) -> Phasor:
-    if f is not None and c is not None:
-        calc = Value("1") / (Value(f"{2 * pi}") * Value(str(f)) * Value(str(c)))
-        return Phasor(f"{calc.std.value} < -90")
-    elif r is not None:
-        return Phasor(f"{r} < -90")
-    else:
-        raise AttributeError("(f, c) or (r) must be filled)")
-
-def Zl(f: Value = None, l: Value = None, r: Value = None) -> Phasor:
-    if f is not None and l is not None:
-        calc_prelim = Value(f"{2 * pi}") * Value(str(f)) * Value(str(l))
-        return Phasor(f"{calc_prelim.std.value} < 90")
-    elif r is not None:
-        return Phasor(f"{r} < 90")
-    else:
-        raise AttributeError("(f, l) or (r) must be filled)")
-
-def L(inductance: str):
-    return Phasor(f"{Value(inductance).std.value} < 90")
-
-def C(capacitance: str):
-    return Phasor(f"{Value(capacitance).std.value} < -90")
-
-def R(resistance: str):
-    return Value(f"{Value(resistance).std.value} Ω")
-
-def Z_voltage_divider(z: Phasor, z_total: Phasor, v_total: Phasor):
-    calc = (z / z_total) * v_total
-    calc.set_base("V")
-
-    return calc
+def ohms_law(v: Value | None, i: Value | None, r: Value | None):
+    if i is not None and r is not None:
+        # V = IR
+        voltage = i * r
