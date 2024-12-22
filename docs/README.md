@@ -1,7 +1,8 @@
 # quickz
 Python library that helps with circuit calculations, designed for my Circuits I and Circuits II classes at RIT for use on the TI NSpire CX-CAS during exams.
 
-> [!NOTE]
+> **Note**
+> 
 > Documentation will come soon once this module is stable and has plenty of features.
 
 ## Demo
@@ -12,7 +13,7 @@ In case you want to see a general idea of how the module works, here's some exam
 
 ### Phasor Math: Multiplying Phasors
 
-![Phasor multiplication example](/docs/exam_phasor_multiplication.png)
+![Phasor multiplication example](./exam_phasor_multiplication.png)
 
 ```python
 from quickz import *
@@ -40,7 +41,7 @@ Q3 ANSWER: 8.82 ∠ 185.0°
 `quickz` can do circuit analysis. It can find the voltage of each component, do current calculations with Ohm's Law, and
 a lot more. Check it out:
 
-![Circuit analysis example](/docs/circuit_analysis_example.png)
+![Circuit analysis example](./circuit_analysis_example.png)
 
 ```python
 from quickz import *
@@ -97,6 +98,6 @@ Q8 ANSWER = 14.0 ∠ 112.62°
 
 **Answers:**
 
-![Circuit analysis answers](/docs/circuit_analysis_example_answers.png)
+![Circuit analysis answers](./circuit_analysis_example_answers.png)
 
 **`quickz` got them all right!**
